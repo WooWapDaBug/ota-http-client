@@ -160,7 +160,7 @@ void mgos_ota_http_start(struct update_context *ctx, const char *url) {
 
 static void mgos_ota_timer_cb(void *arg) {
   if (mgos_sys_config_get_update_url() == NULL) return;
-  struct update_context *ctx = updater_context_create();
+  struct update_context *ctx = updater_context_create(-1);
   if (ctx == NULL) return;
   ctx->ignore_same_version = true;
   ctx->fctx.commit_timeout = mgos_sys_config_get_update_commit_timeout();
