@@ -11,7 +11,7 @@ includes:
 config_schema:
   - ["update.url", "s", {title : "Fetch updates form here"}]
   - ["update.interval", "i", {title : "Check for updates this often"}]
-
+  - ["update.timeout", "i", 300, {title : "Timeout for update"} ]
     # Default CA bundle for updating from mongoose-os.com (and any other site that uses LetsEncrypt) and S3.
   - ["update.ssl_ca_file", "s", "ca.pem", {title : "TLS CA file"}]
   - ["update.ssl_client_cert_file", "s", {title: "TLS client cert file"}]
