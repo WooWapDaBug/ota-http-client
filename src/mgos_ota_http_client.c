@@ -31,7 +31,7 @@ static void fw_download_handler(struct mg_connection *c, int ev, void *p,
     }
     case MG_EV_RECV: {
       // Use bytes_already_downloaded as flag to know if we have already parsed the http header
-      if (ctx->bytes_already_downloaded == ~0) {
+      if (ctx->bytes_already_downloaded == (size_t)~0) {
         LOG(LL_DEBUG, ("Looking for HTTP header"));
         struct http_message hm;
         int parsed = mg_parse_http(io->buf, io->len, &hm, 0);
@@ -108,7 +108,7 @@ static void fw_download_handler(struct mg_connection *c, int ev, void *p,
       if (!is_update_finished(ctx)) {
         /* Update failed or connection was terminated by server */
         if (ctx->status_msg == NULL) ctx->status_msg = "Update failed";
-        ctx->result = ~0;
+        ctx->result = -1;
       } else if (is_reboot_required(ctx)) {
         LOG(LL_INFO, ("Rebooting device"));
         mgos_system_restart_after(100);
@@ -165,7 +165,7 @@ static void mgos_ota_timer_cb(void *arg) {
   if (mgos_sys_config_get_update_url() == NULL) return;
   struct update_context *ctx = updater_context_create(-1);
   if (ctx == NULL) return;
-  ctx->bytes_already_downloaded = -1;
+  ctx->bytes_already_downloaded = (size_t)~0;
   ctx->ignore_same_version = true;
   ctx->fctx.commit_timeout = mgos_sys_config_get_update_commit_timeout();
   mgos_ota_http_start(ctx, mgos_sys_config_get_update_url());
