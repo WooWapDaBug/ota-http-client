@@ -31,7 +31,7 @@ static void fw_download_handler(struct mg_connection *c, int ev, void *p,
     }
     case MG_EV_RECV: {
       // Use bytes_already_downloaded as flag to know if we have already parsed the http header
-      if (ctx->bytes_already_downloaded == -1) {
+      if (ctx->bytes_already_downloaded == ~0) {
         LOG(LL_DEBUG, ("Looking for HTTP header"));
         struct http_message hm;
         int parsed = mg_parse_http(io->buf, io->len, &hm, 0);
@@ -108,7 +108,7 @@ static void fw_download_handler(struct mg_connection *c, int ev, void *p,
       if (!is_update_finished(ctx)) {
         /* Update failed or connection was terminated by server */
         if (ctx->status_msg == NULL) ctx->status_msg = "Update failed";
-        ctx->result = -1;
+        ctx->result = ~0;
       } else if (is_reboot_required(ctx)) {
         LOG(LL_INFO, ("Rebooting device"));
         mgos_system_restart_after(100);
