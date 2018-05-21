@@ -30,7 +30,8 @@ static void fw_download_handler(struct mg_connection *c, int ev, void *p,
       break;
     }
     case MG_EV_RECV: {
-      if (ctx->file_size == 0) {
+      // Use bytes_already_downloaded as flag to know if we have already parsed the http header
+      if (ctx->bytes_already_downloaded < 0) {
         LOG(LL_DEBUG, ("Looking for HTTP header"));
         struct http_message hm;
         int parsed = mg_parse_http(io->buf, io->len, &hm, 0);
@@ -61,6 +62,10 @@ static void fw_download_handler(struct mg_connection *c, int ev, void *p,
           c->flags |= MG_F_CLOSE_IMMEDIATELY;
           return;
         }
+
+        // We have finished parsing the header.
+        
+        ctx->bytes_already_downloaded = 0;
         if (hm.body.len != 0) {
           LOG(LL_DEBUG, ("HTTP header: file size: %d", (int) hm.body.len));
           if (hm.body.len == (size_t) ~0) {
@@ -69,8 +74,6 @@ static void fw_download_handler(struct mg_connection *c, int ev, void *p,
                 "Invalid content-length, perhaps chunked-encoding";
             c->flags |= MG_F_CLOSE_IMMEDIATELY;
             break;
-          } else {
-            ctx->file_size = hm.body.len;
           }
 
           mbuf_remove(io, parsed);
@@ -141,8 +144,9 @@ void mgos_ota_http_start(struct update_context *ctx, const char *url) {
               (mgos_sys_config_get_device_id() ? mgos_sys_config_get_device_id() : "-"),
               mgos_sys_ro_vars_get_mac_address(), mgos_sys_ro_vars_get_arch(), mgos_sys_ro_vars_get_fw_version(), mgos_sys_ro_vars_get_fw_id());
 
+  opts.user_data = ctx;
   struct mg_connection *c = mg_connect_http_opt(
-      mgos_get_mgr(), fw_download_handler, ctx, opts, url, extra_headers, NULL);
+      mgos_get_mgr(), fw_download_handler, opts, url, extra_headers, NULL);
 
   if (extra_headers != ehb) free(extra_headers);
 
@@ -162,6 +166,7 @@ static void mgos_ota_timer_cb(void *arg) {
   if (mgos_sys_config_get_update_url() == NULL) return;
   struct update_context *ctx = updater_context_create(-1);
   if (ctx == NULL) return;
+  ctx->bytes_already_downloaded = -1;
   ctx->ignore_same_version = true;
   ctx->fctx.commit_timeout = mgos_sys_config_get_update_commit_timeout();
   mgos_ota_http_start(ctx, mgos_sys_config_get_update_url());
@@ -173,7 +178,7 @@ bool mgos_ota_http_client_init(void) {
   if (mgos_sys_config_get_update_url() != NULL && mgos_sys_config_get_update_interval() > 0) {
     LOG(LL_INFO,
         ("Updates from %s, every %d seconds", mgos_sys_config_get_update_url(), mgos_sys_config_get_update_interval()));
-    mgos_set_timer(mgos_sys_config_get_update_interval() * 1000, true /* repeat */, mgos_ota_timer_cb,NULL);
+    mgos_set_timer(mgos_sys_config_get_update_interval() * 1000, true /* repeat */, mgos_ota_timer_cb, NULL);
   }
   return true;
 }
