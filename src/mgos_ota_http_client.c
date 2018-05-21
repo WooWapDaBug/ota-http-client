@@ -31,7 +31,7 @@ static void fw_download_handler(struct mg_connection *c, int ev, void *p,
     }
     case MG_EV_RECV: {
       // Use bytes_already_downloaded as flag to know if we have already parsed the http header
-      if (ctx->bytes_already_downloaded < 0) {
+      if (ctx->bytes_already_downloaded == -1) {
         LOG(LL_DEBUG, ("Looking for HTTP header"));
         struct http_message hm;
         int parsed = mg_parse_http(io->buf, io->len, &hm, 0);
@@ -144,9 +144,8 @@ void mgos_ota_http_start(struct update_context *ctx, const char *url) {
               (mgos_sys_config_get_device_id() ? mgos_sys_config_get_device_id() : "-"),
               mgos_sys_ro_vars_get_mac_address(), mgos_sys_ro_vars_get_arch(), mgos_sys_ro_vars_get_fw_version(), mgos_sys_ro_vars_get_fw_id());
 
-  opts.user_data = ctx;
   struct mg_connection *c = mg_connect_http_opt(
-      mgos_get_mgr(), fw_download_handler, opts, url, extra_headers, NULL);
+      mgos_get_mgr(), fw_download_handler, ctx, opts, url, extra_headers, NULL);
 
   if (extra_headers != ehb) free(extra_headers);
 
