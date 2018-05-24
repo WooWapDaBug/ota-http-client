@@ -30,7 +30,7 @@ static void fw_download_handler(struct mg_connection *c, int ev, void *p,
       break;
     }
     case MG_EV_RECV: {
-      if (ctx->file_size == 0) {
+      if (ctx->zip_file_size == 0) {
         LOG(LL_DEBUG, ("Looking for HTTP header"));
         struct http_message hm;
         int parsed = mg_parse_http(io->buf, io->len, &hm, 0);
@@ -70,7 +70,7 @@ static void fw_download_handler(struct mg_connection *c, int ev, void *p,
             c->flags |= MG_F_CLOSE_IMMEDIATELY;
             break;
           } else {
-            ctx->file_size = hm.body.len;
+            ctx->zip_file_size = hm.body.len;
           }
 
           mbuf_remove(io, parsed);
